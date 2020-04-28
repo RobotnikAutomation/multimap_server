@@ -262,55 +262,7 @@ class MultimapServer
         }
       }
 
-      // for(int i = 0; i < maps_vector.size(); i++)
-      // {
-      //   std::cout << maps_vector[i].mapfname << std::endl;
-      //   std::cout << maps_vector[i].mode << std::endl;
-      // }
-
-
-      // service = n.advertiseService("static_map", &MultimapServer::mapCallback, this);
-      // //pub = n.advertise<nav_msgs::MapMetaData>("map_metadata", 1,
-      //
-      // // Latched publisher for metadata
-      // metadata_pub= n.advertise<nav_msgs::MapMetaData>("map_metadata", 1, true);
-      // metadata_pub.publish( meta_data_message_ );
-      //
-      // // Latched publisher for data
-      // map_pub = n.advertise<nav_msgs::OccupancyGrid>("map", 1, true);
-      // map_pub.publish( map_resp_.map );
     }
-  //
-  // private:
-  //   ros::NodeHandle n;
-  //   ros::Publisher map_pub;
-  //   ros::Publisher metadata_pub;
-  //   ros::ServiceServer service;
-  //
-  //   /** Callback invoked when someone requests our service */
-  //   bool mapCallback(nav_msgs::GetMap::Request  &req,
-  //                    nav_msgs::GetMap::Response &res )
-  //   {
-  //     // request is empty; we ignore it
-  //
-  //     // = operator is overloaded to make deep copy (tricky!)
-  //     res = map_resp_;
-  //     ROS_INFO("Sending map");
-  //
-  //     return true;
-  //   }
-  //
-  //   /** The map data is cached here, to be sent out to service callers
-  //    */
-  //   nav_msgs::MapMetaData meta_data_message_;
-  //   nav_msgs::GetMap::Response map_resp_;
-  //
-  //   /*
-  //   void metadataSubscriptionCallback(const ros::SingleSubscriberPublisher& pub)
-  //   {
-  //     pub.publish( meta_data_message_ );
-  //   }
-  //   */
 
 };
 
