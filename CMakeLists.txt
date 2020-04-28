@@ -7,6 +7,7 @@ find_package(catkin REQUIRED
             nav_msgs
             tf2
             resource_retriever
+            multimap_server_msgs
         )
 
 find_package(Bullet REQUIRED)
