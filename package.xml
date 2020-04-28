@@ -30,7 +30,4 @@
   <run_depend>yaml-cpp</run_depend>
   <run_depend>resource-retriever</run_depend>
 
-  <test_depend>rospy</test_depend>
-  <test_depend>rostest</test_depend>
-  <test_depend>rosunit</test_depend>
 </package>

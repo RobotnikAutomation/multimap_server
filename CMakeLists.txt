@@ -57,47 +57,9 @@ target_link_libraries(multimap_server
     ${catkin_LIBRARIES}
 )
 
-add_executable(multimap_server-map_saver src/map_saver.cpp)
-add_dependencies(multimap_server-map_saver ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-set_target_properties(multimap_server-map_saver PROPERTIES OUTPUT_NAME map_saver)
-target_link_libraries(multimap_server-map_saver
-    ${catkin_LIBRARIES}
-)
-
-# copy test data to same place as tests are run
-function(copy_test_data)
-    cmake_parse_arguments(PROJECT "" "" "FILES" ${ARGN})
-    foreach(datafile ${PROJECT_FILES})
-        file(COPY ${datafile} DESTINATION ${PROJECT_BINARY_DIR}/test)
-    endforeach()
-endfunction()
-
-## Tests
-if(CATKIN_ENABLE_TESTING)
-  copy_test_data( FILES
-      test/testmap.bmp
-      test/testmap.png )
-  catkin_add_gtest(${PROJECT_NAME}_utest test/utest.cpp test/test_constants.cpp)
-  target_link_libraries(${PROJECT_NAME}_utest
-    multimap_server_image_loader
-    ${SDL_LIBRARY}
-    ${SDL_IMAGE_LIBRARIES}
-  )
-
-  add_executable(rtest test/rtest.cpp test/test_constants.cpp)
-  add_dependencies(rtest ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-  target_link_libraries( rtest
-      gtest
-      ${catkin_LIBRARIES}
-  )
-
-  # This has to be done after we've already built targets, or catkin variables get borked
-  find_package(rostest REQUIRED)
-  add_rostest(test/rtest.xml)
-endif()
 
 ## Install executables and/or libraries
-install(TARGETS multimap_server-map_saver multimap_server multimap_server_image_loader
+install(TARGETS multimap_server multimap_server_image_loader
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
@@ -107,9 +69,3 @@ install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
   FILES_MATCHING PATTERN "*.h"
   PATTERN ".svn" EXCLUDE)
-
-## Install excutable python script
-install(
-    PROGRAMS
-      scripts/crop_map
-    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
