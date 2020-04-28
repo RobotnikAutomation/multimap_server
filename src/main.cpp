@@ -44,6 +44,7 @@
 #include "yaml-cpp/yaml.h"
 #include <resource_retriever/retriever.h>
 #include <multimap_server_msgs/LoadMap.h>
+#include <ros/package.h>
 
 
 #ifdef HAVE_YAMLCPP_GT_0_5_0
@@ -60,6 +61,8 @@ class Map
 {
   public:
 
+    std::string map_fullname;
+
     Map(const std::string& fname, const std::string& ns, const std::string& desired_name, const std::string& global_frame_id)
     {
       std::string mapfname = "";
@@ -68,6 +71,8 @@ class Map
       double occ_th, free_th;
       MapMode mode = TRINARY;
       double resolution;
+
+      map_fullname = ns + "/" + desired_name;
 
       std::ifstream fin(fname.c_str());
       if (fin.fail()) {
@@ -188,6 +193,11 @@ class Map
       map_pub.publish( map_resp_.map );
     }
 
+    std::string getMapFullName()
+    {
+      return map_fullname;
+    }
+
   private:
     ros::NodeHandle n;
     ros::Publisher map_pub;
@@ -238,17 +248,18 @@ class MultimapServer
       parser.GetNextDocument(doc);
 #endif
 
-      //TODO: This is the main part to modify
-      for (YAML::const_iterator namespace_iterator = doc.begin(); namespace_iterator != doc.end(); ++namespace_iterator) {
-        // std::cout << namespace_iterator->first.as<std::string>() << "\n";
+      for (YAML::const_iterator namespace_iterator = doc.begin(); namespace_iterator != doc.end(); ++namespace_iterator)
+      {
         std::string global_frame = namespace_iterator->second["global_frame"].as<std::string>();
-        // std::cout << namespace_iterator->second["global_frame"].as<std::string>() << "\n";
         YAML::Node maps = namespace_iterator->second["maps"];
-        for (YAML::const_iterator maps_iterator = maps.begin(); maps_iterator != maps.end(); ++maps_iterator) {
-          std::cout << maps_iterator->second.as<std::string>() << "\n";
+        for (YAML::const_iterator maps_iterator = maps.begin(); maps_iterator != maps.end(); ++maps_iterator)
+        {
+          std::string map_path = ros::package::getPath(namespace_iterator->second["maps_package"].as<std::string>()) +
+            "/" + maps_iterator->second.as<std::string>();
 
+          Map *new_map = new Map(map_path, namespace_iterator->first.as<std::string>(),
+            maps_iterator->first.as<std::string>(), namespace_iterator->second["global_frame"].as<std::string>());
 
-          Map *new_map = new Map(maps_iterator->second.as<std::string>(), namespace_iterator->first.as<std::string>(), maps_iterator->first.as<std::string>(), namespace_iterator->second["global_frame"].as<std::string>());
           maps_vector.push_back(*new_map);
         }
       }
@@ -263,8 +274,26 @@ class MultimapServer
     bool loadMapCallback(multimap_server_msgs::LoadMap::Request &req,
                           multimap_server_msgs::LoadMap::Response &res)
     {
-      Map *new_map = new Map(req.map_url, req.ns, req.map_name, req.global_frame);
-      maps_vector.push_back(*new_map);
+      if(isMapAlreadyLoaded(req.ns, req.map_name) == true)
+      {
+        res.success = false;
+        res.msg = "load_map service failed: a map with the same name is already loaded";
+        return true;
+      }
+
+      try
+      {
+        Map *new_map = new Map(req.map_url, req.ns, req.map_name, req.global_frame);
+        maps_vector.push_back(*new_map);
+      }
+      catch(std::exception& e) {
+        res.success = false;
+        res.msg = "load_map service failed with exception: " + std::string(e.what());
+        return true;
+      }
+
+      res.success = true;
+      res.msg = "load_map service worked succesfully for: " + std::string(req.map_url);
       return true;
     }
 
@@ -273,6 +302,20 @@ class MultimapServer
     {
       // TODO
       return true;
+    }
+
+    bool isMapAlreadyLoaded(std::string ns, std::string map_name)
+    {
+      std::string map_fullname = ns + "/" + map_name;
+      std::vector<Map>::iterator it;
+      for(it = maps_vector.begin(); it != maps_vector.end(); ++it)
+      {
+        if(it->getMapFullName() == map_fullname)
+        {
+          return true;
+        }
+      }
+      return false;
     }
 
 };

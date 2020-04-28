@@ -1,21 +1,23 @@
 level_0:
   global_frame: level_0_map
+  maps_package: multimap_server
   maps:
-    localization: /home/alvaro/workspaces/multimap_ws/src/multimap_server/maps/localization_floor_0.yaml
-    routes: /home/alvaro/workspaces/multimap_ws/src/multimap_server/maps/routes_floor_0.yaml
-    # localization: package://multimap_server/maps/localization_floor_0.yaml
-    # routes: package://multimap_server/maps/routes_floor_0.yaml
-    # beautified: package://multimap_server/maps/level_0_beautified.yaml
+    localization: maps/localization_floor_0.yaml
+    routes: maps/routes_floor_0.yaml
+    # localization: maps/localization_floor_0.yaml
+    # routes: maps/routes_floor_0.yaml
+    # beautified: maps/level_0_beautified.yaml
 level_1:
   global_frame: level_1_map
+  maps_package: multimap_server
   maps:
-    localization: /home/alvaro/workspaces/multimap_ws/src/multimap_server/maps/localization_floor_1.yaml
-    routes: /home/alvaro/workspaces/multimap_ws/src/multimap_server/maps/routes_floor_1.yaml
-    # localization: package://multimap_server/maps/localization_floor_1.yaml
-    # routes: package://multimap_server/maps/routes_floor_1.yaml
-    # beautified: package://multimap_server/maps/level_1_beautified.yaml
+    localization: maps/localization_floor_1.yaml
+    routes: maps/routes_floor_1.yaml
+    # localization: maps/localization_floor_1.yaml
+    # routes: maps/routes_floor_1.yaml
+    # beautified: maps/level_1_beautified.yaml
 # rooftop:
 #   global_frame: rooftop_map
 #   maps:
-#     localization: package://multimap_server/maps/level_1_localization.yaml
-#     routes: package://multimap_server/maps/level_1_routes.yaml
+#     localization: maps/rooftop_localization.yaml
+#     routes: maps/rooftop_routes.yaml

@@ -7,6 +7,7 @@ find_package(catkin REQUIRED
             nav_msgs
             tf2
             multimap_server_msgs
+            roslib
         )
 
 find_package(Bullet REQUIRED)
