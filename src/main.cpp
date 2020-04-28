@@ -43,6 +43,8 @@
 #include "nav_msgs/MapMetaData.h"
 #include "yaml-cpp/yaml.h"
 #include <resource_retriever/retriever.h>
+#include <multimap_server_msgs/LoadMap.h>
+
 
 #ifdef HAVE_YAMLCPP_GT_0_5_0
 // The >> operator disappeared in yaml-cpp 0.5, so this function is
@@ -212,13 +214,15 @@ class Map
 
 };
 
+
 class MultimapServer
 {
   public:
     /** Trivial constructor */
     MultimapServer(const std::string& fname)
     {
-      std::vector<Map> maps_vector;
+      std::string load_map_service_name = "load_map";
+      load_map_service = n.advertiseService(load_map_service_name, &MultimapServer::loadMapCallback, this);
 
       std::ifstream fin(fname.c_str());
       if (fin.fail()) {
@@ -261,7 +265,27 @@ class MultimapServer
           maps_vector.push_back(*new_map);
         }
       }
+    }
 
+  private:
+    ros::NodeHandle n;
+    ros::ServiceServer load_map_service;
+    ros::ServiceServer dump_map_service;
+    std::vector<Map> maps_vector;
+
+    bool loadMapCallback(multimap_server_msgs::LoadMap::Request &req,
+                          multimap_server_msgs::LoadMap::Response &res)
+    {
+      Map *new_map = new Map(req.map_url, req.ns, req.map_name, req.global_frame);
+      maps_vector.push_back(*new_map);
+      return true;
+    }
+
+    bool dumpMapCallback(multimap_server_msgs::LoadMap::Request &req,
+                          multimap_server_msgs::LoadMap::Response &res)
+    {
+      // TODO
+      return true;
     }
 
 };
