@@ -247,19 +247,6 @@ class MultimapServer
         for (YAML::const_iterator maps_iterator = maps.begin(); maps_iterator != maps.end(); ++maps_iterator) {
           std::cout << maps_iterator->second.as<std::string>() << "\n";
 
-          //TODO: Modify resource_retriever package to obtain resolved package path
-          // resource_retriever::Retriever r;
-          // resource_retriever::MemoryResource resource;
-          // try
-          // {
-          //   resource = r.get(maps_iterator->second.as<std::string>());
-          // }
-          // catch (resource_retriever::Exception& e)
-          // {
-          //   ROS_ERROR("Failed to retrieve file: %s", e.what());
-          // }
-          //
-          // std::cout << resource.data.get() << std::endl;
 
           Map *new_map = new Map(maps_iterator->second.as<std::string>(), namespace_iterator->first.as<std::string>(), maps_iterator->first.as<std::string>(), namespace_iterator->second["global_frame"].as<std::string>());
           maps_vector.push_back(*new_map);
