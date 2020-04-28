@@ -256,11 +256,25 @@ class MultimapServer
         {
           std::string map_path = ros::package::getPath(namespace_iterator->second["maps_package"].as<std::string>()) +
             "/" + maps_iterator->second.as<std::string>();
+          std::string map_namespace = namespace_iterator->first.as<std::string>();
+          std::string map_name = maps_iterator->first.as<std::string>();
+          std::string map_frame = namespace_iterator->second["global_frame"].as<std::string>();
 
-          Map *new_map = new Map(map_path, namespace_iterator->first.as<std::string>(),
-            maps_iterator->first.as<std::string>(), namespace_iterator->second["global_frame"].as<std::string>());
-
-          maps_vector.push_back(*new_map);
+          if(isMapAlreadyLoaded(map_namespace, map_name) == true)
+          {
+            ROS_WARN("A map with the name %s/%s is already loaded", map_namespace.c_str(), map_name.c_str());
+          }
+          else
+          {
+            try
+            {
+              Map *new_map = new Map(map_path, map_namespace, map_name, map_frame);
+              maps_vector.push_back(*new_map);
+            }
+            catch(std::exception& e) {
+              ROS_WARN("load_map service failed with exception: %s", e.what());
+            }
+          }
         }
       }
     }
