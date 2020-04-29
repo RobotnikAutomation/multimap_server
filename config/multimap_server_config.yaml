@@ -2,22 +2,11 @@ level_0:
   global_frame: level_0_map
   maps_package: multimap_server
   maps:
-    localization: maps/localization_floor_0.yaml
-    routes: maps/routes_floor_0.yaml
-    # localization: maps/localization_floor_0.yaml
-    # routes: maps/routes_floor_0.yaml
-    # beautified: maps/level_0_beautified.yaml
+    localization: maps/floor_0/localization.yaml
+    routes: maps/floor_0/routes.yaml
 level_1:
   global_frame: level_1_map
   maps_package: multimap_server
   maps:
-    localization: maps/localization_floor_1.yaml
-    routes: maps/routes_floor_1.yaml
-    # localization: maps/localization_floor_1.yaml
-    # routes: maps/routes_floor_1.yaml
-    # beautified: maps/level_1_beautified.yaml
-# rooftop:
-#   global_frame: rooftop_map
-#   maps:
-#     localization: maps/rooftop_localization.yaml
-#     routes: maps/rooftop_routes.yaml
+    localization: maps/floor_1/localization.yaml
+    routes: maps/floor_1/routes.yaml
