@@ -57,6 +57,13 @@ target_link_libraries(multimap_server
     ${catkin_LIBRARIES}
 )
 
+add_executable(online_map_server src/online_map_saver.cpp)
+add_dependencies(online_map_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(online_map_server
+    ${YAMLCPP_LIBRARIES}
+    ${catkin_LIBRARIES}
+)
+
 
 ## Install executables and/or libraries
 install(TARGETS multimap_server multimap_server_image_loader
