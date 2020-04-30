@@ -48,7 +48,7 @@ public:
 
   ros::NodeHandle n;
   ros::ServiceServer save_map_service;
-  ros::ServiceClient get_static_map_client;
+  ros::ServiceClient get_map_client;
 
   // TODO: Saved in specified directory
   bool saveMapCallback(multimap_server_msgs::SaveMap::Request& req, multimap_server_msgs::SaveMap::Response& res)
@@ -76,12 +76,12 @@ public:
       }
     }
 
-    get_static_map_client = n.serviceClient<nav_msgs::GetMap>(req.static_map_service.c_str());
+    get_map_client = n.serviceClient<nav_msgs::GetMap>(req.map_service.c_str());
     nav_msgs::GetMap getMap;
 
-    if (get_static_map_client.exists())
+    if (get_map_client.exists())
     {
-      if (get_static_map_client.call(getMap))
+      if (get_map_client.call(getMap))
       {
         ROS_INFO("Received a %d X %d map @ %.3f m/pix", getMap.response.map.info.width, getMap.response.map.info.height,
                  getMap.response.map.info.resolution);
@@ -145,14 +145,14 @@ public:
       else
       {
         res.success = false;
-        res.msg = "Map couldn't be retrieved. Service " + req.static_map_service + " returned an error";
+        res.msg = "Map couldn't be retrieved. Service " + req.map_service + " returned an error";
         return true;
       }
     }
     else
     {
       res.success = false;
-      res.msg = "Service " + req.static_map_service + " does not exist";
+      res.msg = "Service " + req.map_service + " does not exist";
       return true;
     }
 
