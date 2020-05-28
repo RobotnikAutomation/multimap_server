@@ -31,7 +31,7 @@
 
 #define USAGE                                                                                                          \
   "\nUSAGE: multimap_server <multimap_server_config.yaml>\n"                                                           \
-  "  multimap_server_config.yaml: Indicates which maps are going to be loaded and info on how to do it"
+  "  multimap_server_config.yaml: Indicates which environments are going to be loaded and info on how to do it"
 
 #include <stdio.h>
 #include <stdlib.h>
