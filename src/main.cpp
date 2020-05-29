@@ -41,11 +41,16 @@
 #include "ros/ros.h"
 #include "ros/console.h"
 #include "multimap_server/image_loader.h"
-#include "nav_msgs/MapMetaData.h"
 #include "yaml-cpp/yaml.h"
 #include <resource_retriever/retriever.h>
-#include <multimap_server_msgs/LoadMap.h>
 #include <ros/package.h>
+
+#include "nav_msgs/MapMetaData.h"
+#include <std_srvs/Trigger.h>
+#include <multimap_server_msgs/Environment.h>
+#include <multimap_server_msgs/Environments.h>
+#include <multimap_server_msgs/LoadMap.h>
+#include <multimap_server_msgs/LoadEnvironments.h>
 
 #ifdef HAVE_YAMLCPP_GT_0_5_0
 // The >> operator disappeared in yaml-cpp 0.5, so this function is
@@ -252,12 +257,50 @@ public:
     std::string load_map_service_name = "load_map";
     load_map_service = n.advertiseService(load_map_service_name, &MultimapServer::loadMapCallback, this);
 
+    std::string load_environments_service_name = "load_environments";
+    load_environments_service =
+        n.advertiseService(load_environments_service_name, &MultimapServer::loadEnvironmentsCallback, this);
+
+    std::string dump_map_service_name = "dump_map";
+    dump_map_service = n.advertiseService(dump_map_service_name, &MultimapServer::dumpMapCallback, this);
+
+    std::string dump_environments_service_name = "dump_environments";
+    dump_environments_service =
+        n.advertiseService(dump_environments_service_name, &MultimapServer::dumpEnvironmentsCallback, this);
+
+    // Latched environments topic
+    std::string environments_topic_name = "environments";
+    environments_pub = n.advertise<multimap_server_msgs::Environments>(environments_topic_name, 1, true);
+    // TODO: Publish it somewhere (initial creation and service calls)
+
+    if (false == loadEnvironmentsFromYAML(fname))
+    {
+      ROS_ERROR("Multimap_server could not open %s. Shutting down", fname.c_str());
+      exit(-1);
+    }
+  }
+
+private:
+  ros::NodeHandle n;
+
+  ros::Publisher environments_pub;
+  ros::ServiceServer load_map_service;
+  ros::ServiceServer dump_map_service;
+  ros::ServiceServer load_environments_service;
+  ros::ServiceServer dump_environments_service;
+
+  std::vector<Map*> maps_vector;
+  multimap_server_msgs::Environments environments_vector;
+
+  bool loadEnvironmentsFromYAML(std::string fname)
+  {
     std::ifstream fin(fname.c_str());
     if (fin.fail())
     {
-      ROS_ERROR("Multimap_server could not open %s.", fname.c_str());
-      exit(-1);
+      ROS_ERROR("The file %s could not be opened", fname.c_str());
+      return false;
     }
+
 #ifdef HAVE_YAMLCPP_GT_0_5_0
     // The document loading process changed in yaml-cpp 0.5.
     YAML::Node doc = YAML::Load(fin);
@@ -269,8 +312,14 @@ public:
 
     for (YAML::const_iterator namespace_iterator = doc.begin(); namespace_iterator != doc.end(); ++namespace_iterator)
     {
+      multimap_server_msgs::Environment new_environment;
+
       std::string global_frame = namespace_iterator->second["global_frame"].as<std::string>();
       YAML::Node maps = namespace_iterator->second["maps"];
+
+      new_environment.name = namespace_iterator->first.as<std::string>();
+      new_environment.global_frame = global_frame;
+
       for (YAML::const_iterator maps_iterator = maps.begin(); maps_iterator != maps.end(); ++maps_iterator)
       {
         std::string map_path = ros::package::getPath(namespace_iterator->second["maps_package"].as<std::string>()) +
@@ -288,7 +337,8 @@ public:
           try
           {
             Map* new_map = new Map(map_path, map_namespace, map_name, map_frame);
-            maps_vector.push_back(*new_map);
+            maps_vector.push_back(new_map);
+            new_environment.map_name.push_back(map_name);
           }
           catch (std::exception& e)
           {
@@ -296,14 +346,11 @@ public:
           }
         }
       }
+      environments_vector.environments.push_back(new_environment);
     }
+    // environments_pub.publish(environments_vector);
+    return true;
   }
-
-private:
-  ros::NodeHandle n;
-  ros::ServiceServer load_map_service;
-  ros::ServiceServer dump_map_service;
-  std::vector<Map> maps_vector;
 
   bool loadMapCallback(multimap_server_msgs::LoadMap::Request& req, multimap_server_msgs::LoadMap::Response& res)
   {
@@ -317,7 +364,26 @@ private:
     try
     {
       Map* new_map = new Map(req.map_url, req.ns, req.map_name, req.global_frame);
-      maps_vector.push_back(*new_map);
+      maps_vector.push_back(new_map);
+
+      bool env_exists = false;
+      std::vector<multimap_server_msgs::Environment>::iterator it;
+      for (it = environments_vector.environments.begin(); it != environments_vector.environments.end(); ++it)
+      {
+        if (it->name == req.ns)
+        {
+          it->map_name.push_back(req.map_name);
+          env_exists = true;
+        }
+      }
+      if (false == env_exists)
+      {
+        multimap_server_msgs::Environment new_environment;
+        new_environment.name = req.ns;
+        new_environment.global_frame = req.global_frame;
+        new_environment.map_name.push_back(req.map_name);
+        environments_vector.environments.push_back(new_environment);
+      }
     }
     catch (std::exception& e)
     {
@@ -331,19 +397,124 @@ private:
     return true;
   }
 
+  bool loadEnvironmentsCallback(multimap_server_msgs::LoadEnvironments::Request& req,
+                                multimap_server_msgs::LoadEnvironments::Response& res)
+  {
+    if (true == loadEnvironmentsFromYAML(req.environments_url))
+    {
+      res.success = true;
+      res.msg = "Environments loaded using file " + req.environments_url;
+    }
+    else
+    {
+      res.success = false;
+      res.msg = "Multimap_server could not open " + req.environments_url;
+    }
+    return true;
+  }
+
   bool dumpMapCallback(multimap_server_msgs::LoadMap::Request& req, multimap_server_msgs::LoadMap::Response& res)
   {
-    // TODO
+    bool map_deleted = false;
+    bool map_deleted_from_env = false;
+
+    std::string map_fullname = req.ns + "/" + req.map_name;
+
+    if (isMapAlreadyLoaded(req.ns, req.map_name) == true)
+    {
+      std::vector<Map*>::iterator it;
+      for (it = maps_vector.begin(); it != maps_vector.end(); ++it)
+      {
+        if ((*it)->getMapFullName() == map_fullname)
+        {
+          delete *it;
+          it = maps_vector.erase(it);
+          // it = std::prev(maps_vector.end());  // Set it to end because we will remove just one element
+          map_deleted = true;
+        }
+      }
+      std::vector<multimap_server_msgs::Environment>::iterator it2;
+      for (it2 = environments_vector.environments.begin(); it2 != environments_vector.environments.end(); ++it2)
+      {
+        if (it2->name == req.ns)
+        {
+          std::vector<std::string>::iterator it3;
+          for (it3 = it2->map_name.begin(); it3 != it2->map_name.end(); ++it3)
+          {
+            if (*it3 == req.map_name)
+            {
+              it2->map_name.erase(it3);
+              // it3 = std::prev(environments_vector->map_name.end());
+              // it2 = std::prev(environments_vector.end());
+              map_deleted_from_env = true;
+            }
+          }
+        }
+      }
+
+      if (map_deleted && map_deleted_from_env)
+      {
+        res.success = true;
+        res.msg = "map" + map_fullname + " removed succesfully";
+        return true;
+      }
+      else
+      {
+        res.success = false;
+        if (map_deleted)
+        {
+          res.msg = "map" + map_fullname + " deleted from maps_vector but not from environments_vector. This is a "
+                                           "fatal bug, check ASAP";
+        }
+        else if (map_deleted_from_env)
+        {
+          res.msg = "map" + map_fullname + " deleted from environments_vector but not from maps_vector. This is a "
+                                           "fatal bug, check ASAP";
+        }
+        else
+        {
+          res.msg = "map" + map_fullname +
+                    " exists but could not be deleted from environments_vector and maps_vector. This is a "
+                    "fatal bug, check ASAP";
+        }
+        exit(-1);
+        return true;
+      }
+    }
+    else
+    {
+      res.success = false;
+      res.msg = "dump_map service failed: There is no map loaded under the name " + map_fullname;
+      return true;
+    }
+  }
+
+  // It dumps all the environments for now
+  bool dumpEnvironmentsCallback(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res)
+  {
+    std::vector<Map*>::iterator it;
+    for (it = maps_vector.begin(); it != maps_vector.end(); ++it)
+    {
+      delete *it;
+    }
+    maps_vector.clear();
+
+    environments_vector.environments.clear();
+
+    // environments_pub.publish(environments_vector.environments);
+
+    res.success = true;
+    res.message = "All environments dumped succesfully";
     return true;
   }
 
   bool isMapAlreadyLoaded(std::string ns, std::string map_name)
   {
     std::string map_fullname = ns + "/" + map_name;
-    std::vector<Map>::iterator it;
+    std::vector<Map*>::iterator it;
     for (it = maps_vector.begin(); it != maps_vector.end(); ++it)
     {
-      if (it->getMapFullName() == map_fullname)
+      if ((*it)->getMapFullName() == map_fullname)
       {
         return true;
       }
