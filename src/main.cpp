@@ -368,6 +368,14 @@ private:
       return true;
     }
 
+    std::ifstream fin(req.map_url.c_str());
+    if (fin.fail())
+    {
+      res.success = false;
+      res.msg = "load_map service failed: could not open %s: " + req.map_url;
+      return true;
+    }
+
     try
     {
       Map* new_map = new Map(req.map_url, req.ns, req.map_name, req.global_frame);
