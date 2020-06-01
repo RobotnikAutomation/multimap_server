@@ -361,6 +361,8 @@ private:
 
   bool loadMapCallback(multimap_server_msgs::LoadMap::Request& req, multimap_server_msgs::LoadMap::Response& res)
   {
+    std::string warning_msg = "";
+
     if (isMapAlreadyLoaded(req.ns, req.map_name) == true)
     {
       res.success = false;
@@ -389,6 +391,12 @@ private:
         {
           it->map_name.push_back(req.map_name);
           env_exists = true;
+          if (req.global_frame != "" && req.global_frame != it->global_frame)
+          {
+            warning_msg = "WARNING: You specified a global_frame, but the environment already exists with a different "
+                          "global_frame. Ignoring the input value.";
+            ROS_WARN("%s", warning_msg.c_str());
+          }
         }
       }
       if (false == env_exists)
@@ -408,7 +416,7 @@ private:
     }
 
     res.success = true;
-    res.msg = "load_map service worked succesfully for: " + std::string(req.map_url);
+    res.msg = "load_map service worked succesfully for: " + std::string(req.map_url) + ". " + warning_msg;
     return true;
   }
 
