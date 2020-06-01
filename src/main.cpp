@@ -254,6 +254,8 @@ public:
   /** Trivial constructor */
   MultimapServer(const std::string& fname)
   {
+    timerPublish = n.createTimer(ros::Duration(0.2), &MultimapServer::timerPublishCallback, this);
+
     std::string load_map_service_name = "load_map";
     load_map_service = n.advertiseService(load_map_service_name, &MultimapServer::loadMapCallback, this);
 
@@ -283,6 +285,7 @@ public:
 private:
   ros::NodeHandle n;
 
+  ros::Timer timerPublish;
   ros::Publisher environments_pub;
   ros::ServiceServer load_map_service;
   ros::ServiceServer dump_map_service;
@@ -291,6 +294,11 @@ private:
 
   std::vector<Map*> maps_vector;
   multimap_server_msgs::Environments environments_vector;
+
+  void timerPublishCallback(const ros::TimerEvent& event)
+  {
+    environments_pub.publish(environments_vector);
+  }
 
   bool loadEnvironmentsFromYAML(std::string fname)
   {
@@ -348,7 +356,6 @@ private:
       }
       environments_vector.environments.push_back(new_environment);
     }
-    // environments_pub.publish(environments_vector);
     return true;
   }
 
@@ -500,8 +507,6 @@ private:
     maps_vector.clear();
 
     environments_vector.environments.clear();
-
-    // environments_pub.publish(environments_vector.environments);
 
     res.success = true;
     res.message = "All environments dumped succesfully";
