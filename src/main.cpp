@@ -50,6 +50,7 @@
 #include <multimap_server_msgs/Environment.h>
 #include <multimap_server_msgs/Environments.h>
 #include <multimap_server_msgs/LoadMap.h>
+#include <multimap_server_msgs/DumpMap.h>
 #include <multimap_server_msgs/LoadEnvironments.h>
 
 #ifdef HAVE_YAMLCPP_GT_0_5_0
@@ -273,7 +274,6 @@ public:
     // Latched environments topic
     std::string environments_topic_name = "environments";
     environments_pub = n.advertise<multimap_server_msgs::Environments>(environments_topic_name, 1, true);
-    // TODO: Publish it somewhere (initial creation and service calls)
 
     if (false == loadEnvironmentsFromYAML(fname))
     {
@@ -420,7 +420,7 @@ private:
     return true;
   }
 
-  bool dumpMapCallback(multimap_server_msgs::LoadMap::Request& req, multimap_server_msgs::LoadMap::Response& res)
+  bool dumpMapCallback(multimap_server_msgs::DumpMap::Request& req, multimap_server_msgs::DumpMap::Response& res)
   {
     bool map_deleted = false;
     bool map_deleted_from_env = false;
@@ -436,7 +436,6 @@ private:
         {
           delete *it;
           it = maps_vector.erase(it);
-          // it = std::prev(maps_vector.end());  // Set it to end because we will remove just one element
           map_deleted = true;
         }
       }
@@ -446,14 +445,17 @@ private:
         if (it2->name == req.ns)
         {
           std::vector<std::string>::iterator it3;
-          for (it3 = it2->map_name.begin(); it3 != it2->map_name.end(); ++it3)
+          for (it3 = it2->map_name.begin(); it3 != it2->map_name.end();)
           {
             if (*it3 == req.map_name)
             {
-              it2->map_name.erase(it3);
-              // it3 = std::prev(environments_vector->map_name.end());
-              // it2 = std::prev(environments_vector.end());
+              it3 = it2->map_name.erase(it3);
+              // it2 = --environments_vector.environments.end();
               map_deleted_from_env = true;
+            }
+            else
+            {
+              ++it3;
             }
           }
         }
