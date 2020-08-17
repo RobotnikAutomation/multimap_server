@@ -50,6 +50,23 @@ public:
   ros::ServiceServer save_map_service;
   ros::ServiceClient get_map_client;
 
+  // splits a string 's' by the delimeter 'c' and returns the result into 'v'
+  void split(const string& s, char c, vector<string>& v)
+  {
+    string::size_type i = 0;
+    string::size_type j = s.find(c);
+
+    while (j != string::npos)
+    {
+      v.push_back(s.substr(i, j - i));
+      i = ++j;
+      j = s.find(c, j);
+
+      if (j == string::npos)
+        v.push_back(s.substr(i, s.length()));
+    }
+  }
+
   // TODO: Saved in specified directory
   bool saveMapCallback(multimap_server_msgs::SaveMap::Request& req, multimap_server_msgs::SaveMap::Response& res)
   {
@@ -122,6 +139,18 @@ public:
         fclose(out);
 
         std::string mapmetadatafile = req.map_filename + ".yaml";
+        std::string pgm_filename = mapdatafile;
+
+        // extracts just the filename to be saved inside the yaml file
+        std::vector<std::string> result;
+        split(mapdatafile, '/', result);
+        if (result.size() > 0)
+        {
+          // for (size_t i = 0; i < result.size(); i++)
+          //  ROS_INFO("result %d:  %s", (int)i, result[i].c_str());
+          pgm_filename = result.back();
+        }
+
         ROS_INFO("Writing map occupancy data to %s", mapmetadatafile.c_str());
         FILE* yaml = fopen(mapmetadatafile.c_str(), "w");
 
@@ -130,9 +159,10 @@ public:
         double yaw, pitch, roll;
         mat.getEulerYPR(yaw, pitch, roll);
 
-        fprintf(yaml, "image: %s\nresolution: %f\norigin: [%f, %f, %f]\nnegate: 0\noccupied_thresh: 0.65\nfree_thresh: "
-                      "0.196\n\n",
-                mapdatafile.c_str(), getMap.response.map.info.resolution, getMap.response.map.info.origin.position.x,
+        fprintf(yaml,
+                "image: %s\nresolution: %f\norigin: [%f, %f, %f]\nnegate: 0\noccupied_thresh: 0.65\nfree_thresh: "
+                "0.196\n\n",
+                pgm_filename.c_str(), getMap.response.map.info.resolution, getMap.response.map.info.origin.position.x,
                 getMap.response.map.info.origin.position.y, yaw);
 
         fclose(yaml);
