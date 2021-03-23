@@ -6,8 +6,8 @@ find_package(catkin REQUIRED
             roscpp
             nav_msgs
             tf2
-            multimap_server_msgs
             roslib
+            multimap_server_msgs
         )
 
 find_package(Bullet REQUIRED)
@@ -29,6 +29,7 @@ catkin_package(
         roscpp
         nav_msgs
         tf2
+        multimap_server_msgs
 )
 
 include_directories(

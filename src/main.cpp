@@ -70,6 +70,7 @@ public:
 
   Map(const std::string& fname, const std::string& ns, const std::string& desired_name,
       const std::string& global_frame_id)
+    : pn("~")
   {
     std::string mapfname = "";
     double origin[3];
@@ -206,17 +207,17 @@ public:
              map_resp_.map.info.resolution);
     meta_data_message_ = map_resp_.map.info;
 
-    std::string service_name = ns + "/" + desired_name + "/" + "static_map";
-    service = n.advertiseService(service_name, &Map::mapCallback, this);
+    std::string service_name = "maps/" + ns + "/" + desired_name + "/" + "static_map";
+    service = pn.advertiseService(service_name, &Map::mapCallback, this);
 
     // Latched publisher for metadata
-    std::string metadata_topic_name = ns + "/" + desired_name + "/" + "map_metadata";
-    metadata_pub = n.advertise<nav_msgs::MapMetaData>(metadata_topic_name, 1, true);
+    std::string metadata_topic_name = "maps/" + ns + "/" + desired_name + "/" + "map_metadata";
+    metadata_pub = pn.advertise<nav_msgs::MapMetaData>(metadata_topic_name, 1, true);
     metadata_pub.publish(meta_data_message_);
 
     // Latched publisher for data
-    std::string map_topic_name = ns + "/" + desired_name + "/" + "map";
-    map_pub = n.advertise<nav_msgs::OccupancyGrid>(map_topic_name, 1, true);
+    std::string map_topic_name = "maps/" + ns + "/" + desired_name + "/" + "map";
+    map_pub = pn.advertise<nav_msgs::OccupancyGrid>(map_topic_name, 1, true);
     map_pub.publish(map_resp_.map);
   }
 
@@ -227,6 +228,7 @@ public:
 
 private:
   ros::NodeHandle n;
+  ros::NodeHandle pn;
   ros::Publisher map_pub;
   ros::Publisher metadata_pub;
   ros::ServiceServer service;
@@ -253,27 +255,27 @@ class MultimapServer
 {
 public:
   /** Trivial constructor */
-  MultimapServer(const std::string& fname)
+  MultimapServer(const std::string& fname) : pn("~")
   {
     timerPublish = n.createTimer(ros::Duration(0.2), &MultimapServer::timerPublishCallback, this);
 
     std::string load_map_service_name = "load_map";
-    load_map_service = n.advertiseService(load_map_service_name, &MultimapServer::loadMapCallback, this);
+    load_map_service = pn.advertiseService(load_map_service_name, &MultimapServer::loadMapCallback, this);
 
     std::string load_environments_service_name = "load_environments";
     load_environments_service =
-        n.advertiseService(load_environments_service_name, &MultimapServer::loadEnvironmentsCallback, this);
+        pn.advertiseService(load_environments_service_name, &MultimapServer::loadEnvironmentsCallback, this);
 
     std::string dump_map_service_name = "dump_map";
-    dump_map_service = n.advertiseService(dump_map_service_name, &MultimapServer::dumpMapCallback, this);
+    dump_map_service = pn.advertiseService(dump_map_service_name, &MultimapServer::dumpMapCallback, this);
 
     std::string dump_environments_service_name = "dump_environments";
     dump_environments_service =
-        n.advertiseService(dump_environments_service_name, &MultimapServer::dumpEnvironmentsCallback, this);
+        pn.advertiseService(dump_environments_service_name, &MultimapServer::dumpEnvironmentsCallback, this);
 
     // Latched environments topic
     std::string environments_topic_name = "environments";
-    environments_pub = n.advertise<multimap_server_msgs::Environments>(environments_topic_name, 1, true);
+    environments_pub = pn.advertise<multimap_server_msgs::Environments>(environments_topic_name, 1, true);
 
     if (false == loadEnvironmentsFromYAML(fname))
     {
@@ -284,6 +286,7 @@ public:
 
 private:
   ros::NodeHandle n;
+  ros::NodeHandle pn;
 
   ros::Timer timerPublish;
   ros::Publisher environments_pub;
@@ -488,13 +491,15 @@ private:
         res.success = false;
         if (map_deleted)
         {
-          res.msg = "map" + map_fullname + " deleted from maps_vector but not from environments_vector. This is a "
-                                           "fatal bug, check ASAP";
+          res.msg = "map" + map_fullname +
+                    " deleted from maps_vector but not from environments_vector. This is a "
+                    "fatal bug, check ASAP";
         }
         else if (map_deleted_from_env)
         {
-          res.msg = "map" + map_fullname + " deleted from environments_vector but not from maps_vector. This is a "
-                                           "fatal bug, check ASAP";
+          res.msg = "map" + map_fullname +
+                    " deleted from environments_vector but not from maps_vector. This is a "
+                    "fatal bug, check ASAP";
         }
         else
         {

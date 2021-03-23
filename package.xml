@@ -1,6 +1,6 @@
 <package>
   <name>multimap_server</name>
-  <version>0.0.0</version>
+  <version>0.1.0</version>
   <description>The multimap_server package, based on the code of the map_server package at http://wiki.ros.org/map_server</description>
 
   <author>Brian Gerkey, Tony Pratkanis</author>
@@ -27,5 +27,6 @@
   <run_depend>sdl-image</run_depend>
   <run_depend>tf2</run_depend>
   <run_depend>yaml-cpp</run_depend>
+  <run_depend>multimap_server_msgs</run_depend>
 
 </package>
