@@ -51,7 +51,7 @@ target_link_libraries(multimap_server_image_loader
 )
 
 add_executable(multimap_server src/main.cpp)
-add_dependencies(multimap_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(multimap_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} multimap_server_msgs_generate_messages_cpp )
 target_link_libraries(multimap_server
     multimap_server_image_loader
     ${YAMLCPP_LIBRARIES}
@@ -59,7 +59,7 @@ target_link_libraries(multimap_server
 )
 
 add_executable(online_map_saver src/online_map_saver.cpp)
-add_dependencies(online_map_saver ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(online_map_saver ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} multimap_server_msgs_generate_messages_cpp)
 target_link_libraries(online_map_saver
     ${YAMLCPP_LIBRARIES}
     ${catkin_LIBRARIES}
