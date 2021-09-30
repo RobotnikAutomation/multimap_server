@@ -1,0 +1,6 @@
+image: /home/alvaro/workspaces/rlc_cartographer_component/src/multimap_server/maps/cartographer_3d_map/routes.pgm
+resolution: 0.03
+origin: [-13.65, -17.76, 0.0]
+negate: 0
+occupied_thresh: 0.65
+free_thresh: 0.196

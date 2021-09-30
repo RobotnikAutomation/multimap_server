@@ -1,0 +1,10 @@
+# This file specifies a pbstream map instead of a yaml standard map for localization.
+# Map route will be loaded and published in the environments topic, but no OccupancyGrid will be published.
+# This is allowed to provide compatibility with different localization systems.
+
+cartographer_3d_map:
+  global_frame: robot_map
+  maps_package: multimap_server
+  maps:
+    localization: maps/cartographer_3d_map/cartographer_multimap_test.pbstream
+    routes: maps/cartographer_3d_map/routes.yaml

@@ -68,6 +68,12 @@ class Map
 public:
   std::string map_fullname;
 
+  Map(const std::string& ns, const std::string& desired_name)
+    : pn("~")
+  {
+    map_fullname = ns + "/" + desired_name;
+  }
+
   Map(const std::string& fname, const std::string& ns, const std::string& desired_name,
       const std::string& global_frame_id)
     : pn("~")
@@ -347,8 +353,20 @@ private:
         {
           try
           {
-            Map* new_map = new Map(map_path, map_namespace, map_name, map_frame);
-            maps_vector.push_back(new_map);
+            std::string file_extension = map_path.substr(map_path.find("."));
+            if (file_extension == "yaml")
+            {
+              Map* new_map = new Map(map_path, map_namespace, map_name, map_frame);
+              maps_vector.push_back(new_map);
+            }
+            else
+            {
+              Map* new_map = new Map(map_namespace, map_name);
+              maps_vector.push_back(new_map);
+              ROS_WARN("You are using a file with %s extension as %s map for environment %s."
+                " The map will be published in the environments topic, but OccupancyGrid map will not be advertised."
+                , file_extension.c_str(), map_name.c_str(), map_namespace.c_str());
+            }
             new_environment.map_name.push_back(map_name);
           }
           catch (std::exception& e)
@@ -383,9 +401,21 @@ private:
 
     try
     {
-      Map* new_map = new Map(req.map_url, req.ns, req.map_name, req.global_frame);
-      maps_vector.push_back(new_map);
-
+      std::string file_extension = req.map_url.substr(req.map_url.find("."));
+      if (file_extension == "yaml")
+      {
+        Map* new_map = new Map(req.map_url, req.ns, req.map_name, req.global_frame);
+        maps_vector.push_back(new_map);
+      }
+      else
+      {
+        Map* new_map = new Map(req.ns, req.map_name);
+        maps_vector.push_back(new_map);
+        ROS_WARN("You are using a file with %s extension as %s map for environment %s."
+          " The map will be published in the environments topic, but OccupancyGrid map will not be advertised."
+          , file_extension.c_str(), req.map_name.c_str(), req.ns.c_str());
+      }
+      
       bool env_exists = false;
       std::vector<multimap_server_msgs::Environment>::iterator it;
       for (it = environments_vector.environments.begin(); it != environments_vector.environments.end(); ++it)
