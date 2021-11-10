@@ -330,7 +330,8 @@ private:
 
       new_environment.name = namespace_iterator->first.as<std::string>();
       new_environment.global_frame = global_frame;
-
+      
+      bool maps_loaded = true;
       for (YAML::const_iterator maps_iterator = maps.begin(); maps_iterator != maps.end(); ++maps_iterator)
       {
         std::string map_path = ros::package::getPath(namespace_iterator->second["maps_package"].as<std::string>()) +
@@ -342,6 +343,7 @@ private:
         if (isMapAlreadyLoaded(map_namespace, map_name) == true)
         {
           ROS_WARN("A map with the name %s/%s is already loaded", map_namespace.c_str(), map_name.c_str());
+          maps_loaded = false;
         }
         else
         {
@@ -354,10 +356,16 @@ private:
           catch (std::exception& e)
           {
             ROS_WARN("load_map service failed with exception: %s", e.what());
+            maps_loaded = false;
           }
         }
       }
-      environments_vector.environments.push_back(new_environment);
+      
+      if ( maps_loaded == true)
+      {
+        environments_vector.environments.push_back(new_environment);
+      }      
+      
     }
     return true;
   }
