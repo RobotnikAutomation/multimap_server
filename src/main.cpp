@@ -85,7 +85,7 @@ public:
     if (fin.fail())
     {
       ROS_ERROR("Multimap_server could not open %s.", fname.c_str());
-      exit(-1);
+      // exit(-1);
     }
 #ifdef HAVE_YAMLCPP_GT_0_5_0
     // The document loading process changed in yaml-cpp 0.5.
