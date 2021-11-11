@@ -277,9 +277,11 @@ public:
     std::string environments_topic_name = "environments";
     environments_pub = pn.advertise<multimap_server_msgs::Environments>(environments_topic_name, 1, true);
 
-    if (false == loadEnvironmentsFromYAML(fname))
+    std::string msg;
+
+    if (false == loadEnvironmentsFromYAML(fname, &msg))
     {
-      ROS_ERROR("Multimap_server could not open %s. Shutting down", fname.c_str());
+      ROS_ERROR("Multimap_server could not open %s: %s Shutting down", fname.c_str(), msg);
       exit(-1);
     }
   }
@@ -303,12 +305,13 @@ private:
     environments_pub.publish(environments_vector);
   }
 
-  bool loadEnvironmentsFromYAML(std::string fname)
+  bool loadEnvironmentsFromYAML(std::string fname, std::string *msg)
   {
     std::ifstream fin(fname.c_str());
     if (fin.fail())
     {
-      ROS_ERROR("The file %s could not be opened", fname.c_str());
+      *msg = "The file " + fname + "could not be opened";
+      ROS_ERROR_STREAM(*msg);
       return false;
     }
 
@@ -331,6 +334,7 @@ private:
       new_environment.name = namespace_iterator->first.as<std::string>();
       new_environment.global_frame = global_frame;
 
+      bool maps_loaded = true;
       for (YAML::const_iterator maps_iterator = maps.begin(); maps_iterator != maps.end(); ++maps_iterator)
       {
         std::string map_path = ros::package::getPath(namespace_iterator->second["maps_package"].as<std::string>()) +
@@ -341,7 +345,9 @@ private:
 
         if (isMapAlreadyLoaded(map_namespace, map_name) == true)
         {
-          ROS_WARN("A map with the name %s/%s is already loaded", map_namespace.c_str(), map_name.c_str());
+          *msg = "A map with the name " + map_namespace + "/" + map_name + " is already loaded";
+          ROS_WARN_STREAM(*msg);
+          maps_loaded = false;
         }
         else
         {
@@ -353,12 +359,25 @@ private:
           }
           catch (std::exception& e)
           {
-            ROS_WARN("load_map service failed with exception: %s", e.what());
+            *msg = std::string("load_map service failed with exception: ") + e.what();
+            ROS_WARN_STREAM(*msg);
+            maps_loaded = false;
           }
         }
       }
-      environments_vector.environments.push_back(new_environment);
+
+      if ( maps_loaded == true)
+      {
+        environments_vector.environments.push_back(new_environment);
+      }
+      else
+      {
+        ROS_ERROR("Error loading maps for environment %s", new_environment.name.c_str());
+        return false;
+      }
+
     }
+    *msg = "Environments loaded successfully";
     return true;
   }
 
@@ -426,7 +445,8 @@ private:
   bool loadEnvironmentsCallback(multimap_server_msgs::LoadEnvironments::Request& req,
                                 multimap_server_msgs::LoadEnvironments::Response& res)
   {
-    if (true == loadEnvironmentsFromYAML(req.environments_url))
+    std::string msg;
+    if (true == loadEnvironmentsFromYAML(req.environments_url, &msg))
     {
       res.success = true;
       res.msg = "Environments loaded using file " + req.environments_url;
@@ -434,7 +454,7 @@ private:
     else
     {
       res.success = false;
-      res.msg = "Multimap_server could not open " + req.environments_url;
+      res.msg = "Multimap_server could not open " + req.environments_url + ": " + msg;
     }
     return true;
   }
