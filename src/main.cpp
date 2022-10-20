@@ -335,6 +335,7 @@ private:
       new_environment.global_frame = global_frame;
 
       bool maps_loaded = true;
+      bool maps_already_loaded = false;
       for (YAML::const_iterator maps_iterator = maps.begin(); maps_iterator != maps.end(); ++maps_iterator)
       {
         std::string map_path = ros::package::getPath(namespace_iterator->second["maps_package"].as<std::string>()) +
@@ -348,6 +349,7 @@ private:
           *msg = "A map with the name " + map_namespace + "/" + map_name + " is already loaded";
           ROS_WARN_STREAM(*msg);
           maps_loaded = false;
+          maps_already_loaded = true;
         }
         else
         {
@@ -370,7 +372,7 @@ private:
       {
         environments_vector.environments.push_back(new_environment);
       }
-      else
+      else if (maps_already_loaded == false) // if the map is already loaded does not return error
       {
         ROS_ERROR("Error loading maps for environment %s", new_environment.name.c_str());
         return false;
