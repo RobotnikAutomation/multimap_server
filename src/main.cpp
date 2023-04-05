@@ -338,7 +338,10 @@ private:
       bool maps_already_loaded = false;
       for (YAML::const_iterator maps_iterator = maps.begin(); maps_iterator != maps.end(); ++maps_iterator)
       {
-        std::string map_path = ros::package::getPath(namespace_iterator->second["maps_package"].as<std::string>()) +
+        //std::string map_path = ros::package::getPath(namespace_iterator->second["maps_package"].as<std::string>()) +
+        //                       "/" + maps_iterator->second.as<std::string>();
+        // maps package is used as maps_folder_package in order to be able to locate the files anywhere
+        std::string map_path = namespace_iterator->second["maps_package"].as<std::string>() +
                                "/" + maps_iterator->second.as<std::string>();
         std::string map_namespace = namespace_iterator->first.as<std::string>();
         std::string map_name = maps_iterator->first.as<std::string>();
