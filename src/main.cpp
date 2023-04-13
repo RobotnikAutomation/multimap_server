@@ -330,10 +330,31 @@ private:
 
       std::string global_frame = namespace_iterator->second["global_frame"].as<std::string>();
       YAML::Node maps = namespace_iterator->second["maps"];
-
       new_environment.name = namespace_iterator->first.as<std::string>();
       new_environment.global_frame = global_frame;
+      std::string map_path_root="";
 
+      try 
+      {
+        map_path_root = ros::package::getPath(namespace_iterator->second["maps_package"].as<std::string>());
+        ROS_WARN("maps_package field is deprecated. Please use maps_path instead");
+      } catch (YAML::Exception) 
+      {
+        //ROS_INFO_STREAM("maps_package key does not exist");
+        try 
+        {
+          //ROS_INFO_STREAM("map_path_root = " << map_path_root);
+          map_path_root = namespace_iterator->second["maps_path"].as<std::string>();
+        }
+        catch (YAML::Exception) 
+        {
+          ROS_ERROR("maps_package nor maps_path field are defined");
+          exit(-1);
+        }
+      }
+      ROS_INFO_STREAM("map_path_root = " << map_path_root);
+      
+      
       bool maps_loaded = true;
       bool maps_already_loaded = false;
       for (YAML::const_iterator maps_iterator = maps.begin(); maps_iterator != maps.end(); ++maps_iterator)
@@ -341,8 +362,7 @@ private:
         //std::string map_path = ros::package::getPath(namespace_iterator->second["maps_package"].as<std::string>()) +
         //                       "/" + maps_iterator->second.as<std::string>();
         // maps package is used as maps_folder_package in order to be able to locate the files anywhere
-        std::string map_path = namespace_iterator->second["maps_package"].as<std::string>() +
-                               "/" + maps_iterator->second.as<std::string>();
+        std::string map_path = map_path_root + "/" + maps_iterator->second.as<std::string>();
         std::string map_namespace = namespace_iterator->first.as<std::string>();
         std::string map_name = maps_iterator->first.as<std::string>();
         std::string map_frame = namespace_iterator->second["global_frame"].as<std::string>();
