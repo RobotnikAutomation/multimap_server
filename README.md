@@ -71,9 +71,9 @@ Map saver implementation that runs continuously and offers a service to save map
 * save_map (multimap_server_msgs/SaveMap)
     Save a map by specifying the static_map/dynamic_map service associated to it.
 
-    - **map_service**: Service offered by the map publisher/creator to retrieve the map
+    - **map_service**: Service offered (nav_msgs/GetMap) or Topic published (nav_msgs/OccupancyGrid) by the map publisher/creator to retrieve the map
     - **map_filename**: Desired name for the saved map:
-      - If a name is given, the map will be saved in the current working directory
+      - If just a name is given, the map will be saved in the current working directory
       - If an absoulte path is given, the map will be saved there as long as the path exists and it can be modified by the user.
     - **use_default_thresholds**: If true, the default thresholds (free = 0, occ = 100) will be used. Otherwise, the values will be taken from the fields threshold_occupied and threshold_free.
     - **threshold_occupied**: Value between 1 and 100
@@ -84,7 +84,10 @@ Map saver implementation that runs continuously and offers a service to save map
     rosservice call /save_map "{map_service: '/floor_0/localization/static_map', map_filename: 'localization_map_0', use_default_thresholds: true, threshold_occupied: 0.0, threshold_free: 0.0}"
     ```
     ```
-    rosservice call /save_map "{map_service: '/gmapping/dynamic_map', map_filename: '/home/rb1/maps/robotnik_warehouse_map', use_default_thresholds: true, threshold_occupied: 0.0, threshold_free: 0.0}"
+    rosservice call /save_map "{map_service: '/gmapping/dynamic_map', map_filename: '/home/robot/maps/robotnik_warehouse_map', use_default_thresholds: true, threshold_occupied: 0.0, threshold_free: 0.0}"
+    ```
+    ```
+    rosservice call /save_map "{map_service: '/gmapping/map', map_filename: '/home/robot/maps/robotnik_warehouse_map', use_default_thresholds: true, threshold_occupied: 0.0, threshold_free: 0.0}"
     ```
 
 
