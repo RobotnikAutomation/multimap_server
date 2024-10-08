@@ -1,11 +1,10 @@
 <package>
   <name>multimap_server</name>
-  <version>0.2.0</version>
+  <version>0.3.0</version>
   <description>The multimap_server package, based on the code of the map_server package at http://wiki.ros.org/map_server</description>
   
   <author email="avillena@robotnik.es" >Álvaro Villena</author>
   <author>Brian Gerkey, Tony Pratkanis</author>
-  <maintainer email="avillena@robotnik.es">Álvaro Villena</maintainer>
   <maintainer email="rnavarro@robotnik.es">Román Navarro</maintainer>
   <license>BSD</license>
 
