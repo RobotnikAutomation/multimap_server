@@ -281,7 +281,7 @@ public:
 
     if (false == loadEnvironmentsFromYAML(fname, &msg))
     {
-      ROS_ERROR("Multimap_server could not open %s: %s Shutting down", fname.c_str(), msg);
+      ROS_ERROR("Multimap_server could not open %s: %s Shutting down", fname.c_str(), msg.c_str());
       exit(-1);
     }
   }
