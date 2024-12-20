@@ -1,0 +1,3 @@
+buildPackage(
+  upstreamProjects: 'multimap_server_msgs'
+)
