@@ -35,6 +35,7 @@
 #include "tf2/LinearMath/Matrix3x3.h"
 #include <cstdio>
 #include <multimap_server_msgs/SaveMap.h>
+#include <multimap_server_msgs/SaveMapColour.h>
 
 using namespace std;
 
@@ -43,13 +44,27 @@ public:
   MapSaver() {
     save_map_service =
         n.advertiseService("save_map", &MapSaver::saveMapCallback, this);
+    save_map_colou_service = 
+        n.advertiseService("save_map_colour", &MapSaver::saveMapColourCallback, this);
   }
 
   ros::NodeHandle n;
   ros::ServiceServer save_map_service;
+  ros::ServiceServer save_map_colou_service;
   ros::ServiceClient get_map_client;
 
-  // splits a string 's' by the delimeter 'c' and returns the result into 'v'
+  
+  /**
+   * @brief Splits a string into a vector of substrings based on a delimiter character.
+   *
+   * This function takes a string `s` and splits it into substrings wherever the 
+   * delimiter character `c` is found. The resulting substrings are stored in the 
+   * provided vector `v`.
+   *
+   * @param s The input string to be split.
+   * @param c The delimiter character used to split the string.
+   * @param v The vector where the resulting substrings will be stored.
+   */
   void split(const string &s, char c, vector<string> &v) {
     string::size_type i = 0;
     string::size_type j = s.find(c);
@@ -64,16 +79,26 @@ public:
     }
   }
 
-  /// @brief the map to a pgm file and a yaml file
-  /// @param mapname name of the map
-  /// @param map the map to save
-  /// @param threshold_occupied cells with occupancy probability greater than
-  /// this value are considered occupied
-  /// @param threshold_free cells with occupancy probability less than this
-  /// value are considered free
-  /// @return true if the map is saved, false if map could not be saved
+  /**
+   * @brief Saves the occupancy grid map to a PGM file and its metadata to a YAML file.
+   * 
+   * This function writes the occupancy grid map data to a PGM file and the corresponding
+   * metadata to a YAML file. The map is saved with specified color values for occupied,
+   * free, and unknown cells.
+   * 
+   * @param filename The base name of the files to save (without extension).
+   * @param map The occupancy grid map to save.
+   * @param threshold_occupied The threshold above which cells are considered occupied.
+   * @param threshold_free The threshold below which cells are considered free.
+   * @param colour_occupied The color value for occupied cells in the PGM file (default is 0).
+   * @param colour_free The color value for free cells in the PGM file (default is 254).
+   * @param colour_unknown The color value for unknown cells in the PGM file (default is 205).
+   * @return true if the map and metadata were successfully saved, false otherwise.
+   */
   bool saveMap(const std::string &filename, const nav_msgs::OccupancyGrid &map,
-               const int &threshold_occupied, const int &threshold_free) {
+               const int &threshold_occupied, const int &threshold_free, 
+               const int16_t &colour_occupied = 0, const int16_t &colour_free = 254, 
+               const int16_t &colour_unknown = 205) {
 
     std::string mapdatafile = filename + ".pgm";
     ROS_INFO("Writing map occupancy data to %s", mapdatafile.c_str());
@@ -89,12 +114,12 @@ public:
       for (unsigned int x = 0; x < map.info.width; x++) {
         unsigned int i = x + (map.info.height - y - 1) * map.info.width;
         if (map.data[i] >= 0 && map.data[i] <= threshold_free) { // occ [0,0.1)
-          fputc(254, out);
+          fputc(colour_free, out);
         } else if (map.data[i] <= 100 &&
                    map.data[i] >= threshold_occupied) { // occ (0.65,1]
-          fputc(000, out);
+          fputc(colour_occupied, out);
         } else { // occ [0.1,0.65]
-          fputc(205, out);
+          fputc(colour_unknown, out);
         }
       }
     }
@@ -108,8 +133,6 @@ public:
     std::vector<std::string> result;
     split(mapdatafile, '/', result);
     if (result.size() > 0) {
-      // for (size_t i = 0; i < result.size(); i++)
-      //  ROS_INFO("result %d:  %s", (int)i, result[i].c_str());
       pgm_filename = result.back();
     }
 
@@ -136,7 +159,17 @@ public:
     return true;
   }
 
-  // TODO: Saved in specified directory
+  /**
+   * @brief Callback function to save a map.
+   *
+   * This function handles the request to save a map by either calling a map service
+   * or waiting for a map topic. It validates the thresholds for occupied and free
+   * spaces, retrieves the map, and saves it to the specified file.
+   *
+   * @param req The request containing the map service name, filename, and thresholds.
+   * @param res The response indicating success or failure and a message.
+   * @return true Always returns true to indicate the service call was processed.
+   */
   bool saveMapCallback(multimap_server_msgs::SaveMap::Request &req,
                        multimap_server_msgs::SaveMap::Response &res) {
     std::string mapname = "map";
@@ -200,6 +233,157 @@ public:
         ROS_INFO("Received a %d X %d map @ %.3f m/pix", map.info.width,
                  map.info.height, map.info.resolution);
 
+        if (saveMap(req.map_filename, map, threshold_occupied,
+                    threshold_free) == true) {
+          res.success = true;
+          res.msg = "Map saved succesfully";
+          return true;
+        } else {
+          res.success = false;
+          res.msg = "Error saving the map";
+          return true;
+        }
+      } else {
+        res.success = false;
+        res.msg = "No Service nor Topic with namespace " + req.map_service +
+                  " does exist";
+        ROS_ERROR_STREAM(res.msg);
+        return true;
+      }
+      return true;
+    }
+
+    return true;
+  }
+
+
+  /**
+   * @brief Callback function to save a map with specified color and threshold settings.
+   * 
+   * This function handles the request to save a map with specified color and threshold settings.
+   * It retrieves the map from a specified service or topic, applies the given thresholds and colors,
+   * and saves the map to a file.
+   * 
+   * @param req The request containing the parameters for saving the map.
+   * @param res The response indicating the success or failure of the operation.
+   * @return true Always returns true to indicate that the service call was handled.
+   * 
+   * Request Parameters:
+   * - use_default_thresholds: Boolean flag to indicate whether to use default thresholds.
+   * - threshold_occupied: Occupied threshold value (1-100).
+   * - threshold_free: Free threshold value (0-100).
+   * - colour_occupied: Color value for occupied cells (0-254).
+   * - colour_free: Color value for free cells (0-254).
+   * - colour_unknown: Color value for unknown cells (0-254).
+   * - map_service: The name of the map service or topic to retrieve the map from.
+   * - map_filename: The filename to save the map to.
+   * 
+   * Response Parameters:
+   * - success: Boolean flag indicating whether the map was saved successfully.
+   * - msg: Message providing additional information about the result.
+   */
+  bool saveMapColourCallback(multimap_server_msgs::SaveMapColour::Request &req,
+                       multimap_server_msgs::SaveMapColour::Response &res) {
+    std::string mapname = "map";
+    int threshold_occupied = 100;
+    int threshold_free = 0;
+
+    if (req.use_default_thresholds == false) {
+      threshold_occupied = req.threshold_occupied;
+      threshold_free = req.threshold_free;
+
+      if (threshold_occupied < 1 || threshold_occupied > 100) {
+        res.success = false;
+        res.msg = "threshold_occupied must be between 1 and 100";
+        return true;
+      }
+      if (threshold_free < 0 || threshold_free > 100) {
+        res.success = false;
+        res.msg = "threshold_free must be between 0 and 100";
+        return true;
+      }
+
+      if (req.colour_occupied < 0 || req.colour_occupied > 254) {
+        res.success = false;
+        res.msg = "colour_occupied must be between 0 and 254";
+        return true;
+      }
+      if (req.colour_free < 0 || req.colour_free > 254) {
+        res.success = false;
+        res.msg = "colour_free must be between 0 and 254";
+        return true;
+      }
+      if (req.colour_unknown < 0 || req.colour_unknown > 254) {
+        res.success = false;
+        res.msg = "colour_unknown must be between 0 and 254";
+        return true;
+      }
+    }
+
+    get_map_client = n.serviceClient<nav_msgs::GetMap>(req.map_service.c_str());
+    nav_msgs::GetMap getMap;
+
+    if (get_map_client.exists()) {
+      if (get_map_client.call(getMap)) {
+        ROS_INFO("Received a %d X %d map @ %.3f m/pix",
+                 getMap.response.map.info.width,
+                 getMap.response.map.info.height,
+                 getMap.response.map.info.resolution);
+
+        if (saveMap(req.map_filename, getMap.response.map, threshold_occupied,
+                    threshold_free) == true) {
+          res.success = true;
+          res.msg = "Map saved succesfully";
+          return true;
+        } else {
+          res.success = false;
+          res.msg = "Error saving the map";
+          return true;
+        }
+      } else {
+        res.success = false;
+        res.msg = "Map couldn't be retrieved. Service " + req.map_service +
+                  " returned an error";
+        return true;
+      }
+    } else {
+      ROS_WARN_STREAM("Service " << req.map_service << " does not exist");
+
+      // Check if the topic exists to retrieve the map
+      boost::shared_ptr<nav_msgs::OccupancyGrid const> ret_map;
+      nav_msgs::OccupancyGrid map;
+
+      ret_map = ros::topic::waitForMessage<nav_msgs::OccupancyGrid>(
+          req.map_service, ros::Duration(5));
+      if (ret_map != NULL) {
+        // Topic exists
+        map = *ret_map;
+        ROS_INFO("Received a %d X %d map @ %.3f m/pix", map.info.width,
+                 map.info.height, map.info.resolution);
+
+        if( req.use_default_thresholds == false ) {
+          if (saveMap(req.map_filename, map, threshold_occupied,
+                      threshold_free, req.colour_occupied, req.colour_free, req.colour_unknown) == true) {
+            res.success = true;
+            res.msg = "Map saved succesfully";
+            return true;
+          } else {
+            res.success = false;
+            res.msg = "Error saving the map";
+            return true;
+          }
+        } else {
+          if (saveMap(req.map_filename, map, threshold_occupied,
+                      threshold_free) == true) {
+            res.success = true;
+            res.msg = "Map saved succesfully";
+            return true;
+          } else {
+            res.success = false;
+            res.msg = "Error saving the map";
+            return true;
+          }
+        }
         if (saveMap(req.map_filename, map, threshold_occupied,
                     threshold_free) == true) {
           res.success = true;
