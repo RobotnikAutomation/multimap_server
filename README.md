@@ -93,3 +93,7 @@ Map saver implementation that runs continuously and offers a service to save map
 
 ### 2.2 Bringup
 rosrun multimap_server online_map_saver
+
+## 3 Feature development workflow
+
+For AI-assisted feature work, see the package [agent guide](AGENTS.md), the [requirements](docs/feature-workflow/templates/requirements.md), [design](docs/feature-workflow/templates/design.md), and [plan](docs/feature-workflow/templates/plan.md) templates, and the reusable [planning prompt](.github/prompts/plan-feature.prompt.md) and [implementation prompt](.github/prompts/implement-feature.prompt.md).
