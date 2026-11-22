@@ -1,0 +1,6 @@
+merge_env:
+  global_frame: partial_environment_frame
+  maps_package: multimap_server
+  maps:
+    replace_me: test/data/broken.yaml
+    partial_add: test/data/black.yaml

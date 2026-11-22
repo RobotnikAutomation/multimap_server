@@ -29,4 +29,7 @@
   <run_depend>yaml-cpp</run_depend>
   <run_depend>multimap_server_msgs</run_depend>
 
+  <test_depend>rostest</test_depend>
+  <test_depend>rospy</test_depend>
+
 </package>

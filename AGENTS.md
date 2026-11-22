@@ -6,6 +6,7 @@
 - Keep changes within this package unless a directly required change belongs elsewhere. Ask before changing shared message definitions, another package, public behavior, or otherwise expanding the agreed scope.
 - Preserve existing ROS topics, services, names, and configuration behavior unless the approved requirements say otherwise.
 - Do not commit, create branches, or change release versions unless asked.
+- All the documents have to be in English.
 
 ## Package context
 

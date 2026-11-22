@@ -77,3 +77,10 @@ install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
   FILES_MATCHING PATTERN "*.h"
   PATTERN ".svn" EXCLUDE)
+
+if(CATKIN_ENABLE_TESTING)
+  find_package(rostest REQUIRED)
+  catkin_install_python(PROGRAMS test/test_reload_loaded_maps.py
+    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+  add_rostest(test/reload_loaded_maps.test)
+endif()

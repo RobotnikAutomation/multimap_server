@@ -1,0 +1,4 @@
+merge_env:
+  global_frame: environment_frame
+  maps_package: multimap_server
+  maps: {}
