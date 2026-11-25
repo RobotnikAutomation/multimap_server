@@ -1,0 +1,6 @@
+merge_env:
+  global_frame: incoming_environment_frame
+  maps_package: multimap_server
+  maps:
+    replace_me: test/data/white.yaml
+    add_me: test/data/black.yaml

@@ -1,0 +1,9 @@
+<launch>
+  <node pkg="multimap_server" type="multimap_server" name="reload_loaded_maps_server"
+        args="$(find multimap_server)/test/data/initial_environments.yaml"
+        output="screen" />
+  <test test-name="reload_loaded_maps" pkg="multimap_server"
+        type="test_reload_loaded_maps.py" time-limit="120">
+    <param name="data_dir" value="$(find multimap_server)/test/data" />
+  </test>
+</launch>

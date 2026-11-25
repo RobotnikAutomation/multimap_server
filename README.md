@@ -19,7 +19,9 @@ You can pass a .yaml file as an argument to load an initial set of maps. An exam
 ### 1.2 Services
 * load_environments (multimap_server_msgs/LoadEnvironments)
 
-    Load a new environment using an environment .yaml file.
+    Load or merge maps from an environment .yaml file. Maps with an existing namespace and name are reloaded; new maps are added. Maps already loaded in that environment but not listed in the file remain loaded.
+
+    If any map cannot be loaded, the service returns `success: false`. Other map operations in the same file may still have succeeded, while a failed replacement leaves the previous map loaded.
 
     - **environments_url**: Path to environment .yaml file to be loaded
 
@@ -30,12 +32,12 @@ You can pass a .yaml file as an argument to load an initial set of maps. An exam
 
 * load_map (multimap_server_msgs/LoadMap)
 
-    Load a new map using a map .yaml file. You also have to define a namespace, a desired map_name and a frame_id for the new map.
+    Load or reload a map using a map .yaml file. You also have to define a namespace, a desired map_name and a frame_id for the map. Reloading replaces the map with the same namespace and name; if loading the replacement fails, the previous map remains available.
 
     - **map_url**: Path to map .yaml file to be loaded
     - **ns**: Namespace in which the map will be loaded. If it matches with an existing environment, the map will be loaded on that environment. Otherwise, a new environment will be created.
     - **map_name**: Desired name for the published map
-    - **global_frame**: frame_id in which the map will be published. It will be ignored if the environment already exists.
+    - **global_frame**: frame_id in which the added or reloaded map will be published. If the environment already exists, its published `global_frame` and maps that are not replaced remain unchanged; a mismatch is reported as a warning.
 
     Example:
     ```
@@ -93,3 +95,7 @@ Map saver implementation that runs continuously and offers a service to save map
 
 ### 2.2 Bringup
 rosrun multimap_server online_map_saver
+
+## 3 Feature development workflow
+
+For AI-assisted feature work, see the package [agent guide](AGENTS.md), the [requirements](docs/feature-workflow/templates/requirements.md), [design](docs/feature-workflow/templates/design.md), and [plan](docs/feature-workflow/templates/plan.md) templates, and the reusable [planning prompt](.github/prompts/plan-feature.prompt.md) and [implementation prompt](.github/prompts/implement-feature.prompt.md).
